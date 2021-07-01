@@ -1,21 +1,24 @@
 package mongo
 
 import (
-				"gopkg.in/mgo.v2"
-				"time"
-				"gopkg.in/mgo.v2/bson"
-				"github.com/Ziyang2go/ursho/storage"
-				"github.com/Ziyang2go/ursho/base62"
-				"math/rand"
+	"math/rand"
+	"time"
+
+	"github.com/Ziyang2go/ursho/base62"
+	"github.com/Ziyang2go/ursho/storage"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
-type Person struct {
-	Name string
-	Phone string
-}
-
-func New(host, port, dbName string) (storage.Service, error) {
-	db, err :=  mgo.Dial(host + ":" + port)
+// New contructor of mongodb
+func New(host, port, dbName string, password string) (storage.Service, error) {
+	url := host + ":" + port
+	info := &mgo.DialInfo{
+		Addrs:    []string{url},
+		Username: "mythreekit",
+		Password: password,
+	}
+	db, err := mgo.DialWithInfo(info)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +32,7 @@ func New(host, port, dbName string) (storage.Service, error) {
 
 func (m *mongo) Close() error {
 	m.db.Close()
-	return nil;
+	return nil
 }
 
 func (m *mongo) Load(code string) (string, error) {
@@ -37,15 +40,15 @@ func (m *mongo) Load(code string) (string, error) {
 	id, _ := base62.Decode(code)
 	c := m.db.DB("clients").C("shortener")
 
-	 var item storage.Item
-	 c.Find(bson.M{"uuid": id}).One(&item)
+	var item storage.Item
+	c.Find(bson.M{"uuid": id}).One(&item)
 	return item.URL, nil
 }
 
 func (m *mongo) Save(url string) (string, error) {
 	rand.Seed(time.Now().UnixNano())
-	uuid := rand.Int63();
-	item := &storage.Item{ bson.NewObjectId(), uuid, url, false, 0}
+	uuid := rand.Int63()
+	item := &storage.Item{bson.NewObjectId(), uuid, url, false, 0}
 	c := m.db.DB("clients").C("shortener")
 	err := c.Insert(item)
 

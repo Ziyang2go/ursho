@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+
 	"github.com/Ziyang2go/ursho/config"
 	"github.com/Ziyang2go/ursho/handler"
 	"github.com/Ziyang2go/ursho/storage/mongo"
@@ -22,8 +23,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	svc, err := mongo.New(config.Mongo.Host, config.Mongo.Port, config.Mongo.DB)
+	pass := os.Getenv("MONGO_PASSWORD")
+	svc, err := mongo.New(config.Mongo.Host, config.Mongo.Port, config.Mongo.DB, pass)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,9 +32,9 @@ func main() {
 
 	// Create a server
 	server := &http.Server{
-		Addr: fmt.Sprintf("%s:%s", config.Server.Host, config.Server.Port),
+		Addr:    fmt.Sprintf("%s:%s", config.Server.Host, config.Server.Port),
 		Handler: handler.New(config.Options.Prefix, svc),
-		}
+	}
 
 	// Check for a closing signal
 	go func() {
